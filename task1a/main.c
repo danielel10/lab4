@@ -14,47 +14,55 @@ extern int system_call();
 
 
 
-int ClearSpaces1 (char * c, int len) {
-    while (len != 0) {
+int ClearSpaces1 (char * c, int len, int from) {
+    int len1 = len;
+    while (len1 != 0) {
         if(*c == ' ') {
             while (*c == ' ')
-                system_call(SYS_READ,STDIN, c, 1);
-            return 0;
+                system_call(SYS_READ,from, c, 1);
+            return len1;
         }
         else if( *c != ' ' && *c != '\n') {
-            system_call(SYS_READ,STDIN, c, 1);
+            len1 = system_call(SYS_READ,from, c, 1);
+            if (len1 == 0)
+                return len1;
         }
         else
-            return 0;
+            return len1;
+    }
+    return len1;
+
+}
+
+int print_to_err(int call_id, int response, int flag) {
+    if (flag == 'D') {
+        system_call(SYS_WRITE, STDERR, strcat(itoa(call_id), "\n"), 3);
+        system_call(SYS_WRITE, STDERR, strcat(itoa(response), "\n"), 3);
     }
     return 0;
-
 }
 
-int print_to_err(int call_id, int response) {
-    system_call(SYS_WRITE, STDERR, strcat(itoa(call_id), "\n"), 3);
-    system_call(SYS_WRITE, STDERR, strcat(itoa(response), "\n"), 3);
-    return 0;
-}
-
-int ClearSpaces1err (char * c, int len) {
-    while (len != 0) {
+int ClearSpaces1err (char * c, int len, int from) {
+    int len1 = len;
+    while (len1 != 0) {
         if(*c == ' ') {
             while (*c == ' ') {
-                len = system_call(SYS_READ,STDIN, c, 1);
-                print_to_err(SYS_READ,len);
+                len1 = system_call(SYS_READ,from, c, 1);
+                print_to_err(SYS_READ,len1);
             }
 
-            return 0;
+            return len1;
         }
         else if( *c != ' ' && *c != '\n') {
-            len = system_call(SYS_READ,STDIN, c, 1);
-            print_to_err(SYS_READ,len);
+            len1 = system_call(SYS_READ,from, c, 1);
+            print_to_err(SYS_READ,len1);
+            if (len1 == 0)
+                return len1;
         }
         else
-            return 0;
+            return len1;
     }
-    return 0;
+    return len1;
 
 }
 
@@ -70,7 +78,7 @@ int D_flag(int from,int to) {
     while (len != 0) {
         if(*c != ' ' && *c != '\n') {
             res++;
-            ClearSpaces1err(c, len);
+            len = ClearSpaces1err(c, len, from);
         }
         else if( *c == '\n') {
             write = system_call(SYS_WRITE,to, strcat(itoa(res),"\n"), 3);
@@ -79,13 +87,33 @@ int D_flag(int from,int to) {
             len = system_call(SYS_READ,from, c, 1);
             print_to_err(SYS_READ,len);
         }
+        if(len == 0 && *c != '\n') {
+            write = system_call(SYS_WRITE,to, strcat(itoa(res),"\n"), 2);
+            print_to_err(SYS_WRITE,write);
+        }
+        if(from != STDIN) {
+            int r = system_call(SYS_CLOSE,from, c, 1);
+            print_to_err(SYS_CLOSE,r);
+        }
+
+        if(to != STDOUT) {
+            int t = system_call(SYS_CLOSE,to, c, 1);
+            print_to_err(SYS_CLOSE,t);
+        }
+
+
     }
 
     return 0;
 }
 
 
+void reset_string(char* string, int size) {
+    int k;
+    for (k = 0; k < size; k++)
+        string[k] = '\0';
 
+}
 
 int main (int argc , char* argv[], char* envp[]) {
     int k;
@@ -94,15 +122,25 @@ int main (int argc , char* argv[], char* envp[]) {
     int flag;
     char str[50];
     for (k = 1; k <argc; k++) {
+        reset_string(str,50);
         strcat(str,argv[k] + 2);
         if(argv[k][1] == 'D') {
             flag = 'D';
         }
         else if(argv[k][1] == 'i') {
             file_from = system_call(SYS_OPEN,str, 000, 0644);
+            if(file_from < 0)
+                system_call(1);
+            if(flag == 'D')
+                print_to_err(SYS_OPEN,file_from);
+
         }
         else if(argv[k][1] == 'o'){
             file_to = system_call(SYS_OPEN,str, 101, 0644);
+            if(file_to < 0)
+                system_call(1);
+            if(flag == 'D')
+                print_to_err(SYS_OPEN,file_to);
         }
     }
 
@@ -116,14 +154,23 @@ int main (int argc , char* argv[], char* envp[]) {
         while (len != 0) {
             if(*c != ' ' && *c != '\n') {
                 res++;
-                ClearSpaces1(c, len);
+                len = ClearSpaces1(c, len, file_from);
+
             }
             else if( *c == '\n') {
                 system_call(SYS_WRITE,file_to, strcat(itoa(res),"\n"), 2);
                 res = 0;
                 len = system_call(SYS_READ,file_from, c, 1);
             }
+            if(len == 0 && *c != '\n') {
+                system_call(SYS_WRITE,file_to, strcat(itoa(res),"\n"), 2);
+            }
+
         }
+        if(file_from != STDIN)
+            system_call(SYS_CLOSE,file_from, c, 1);
+        if(file_to != STDOUT)
+            system_call(SYS_CLOSE,file_to, c, 1);
     }
 
     return 0;

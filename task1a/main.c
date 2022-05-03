@@ -10,81 +10,71 @@ extern int system_call();
 #define SYS_LSEEK 19
 #define STDOUT 1
 #define STDIN 0
+#define STDERR 2
 
 
-int ClearSpaces (const char * input, int pos, int len) {
-    int i;
-    for (i = pos; i < len ;) {
-        if(input[i] == ' ') {
-            while (input[i] == ' ')
-                i++;
-            return i;
-        }
-        else
-            i++;
 
-    }
-    return i;
-
-}
-
-//---------------------------------
-int ClearSpaces1 (char * c) {
-    while (c != 0) {
-        if(c == ' ') {
-            while (c != 0 && c == ' ')
-                system_call(SYS_READ,STDIN, c, 1);
+int ClearSpaces1 (char * c, int len) {
+    while (len != 0) {
+        if(*c == ' ') {
+            while (*c == ' ')
+                len = system_call(SYS_READ,STDIN, c, 1);
             return 0;
         }
+        else if( *c != ' ' && *c != '\n') {
+            len = system_call(SYS_READ,STDIN, c, 1);
+        }
         else
-            system_call(SYS_READ,STDIN, c, 1);
+            return 0;
     }
     return 0;
 
 }
 
 
-//------------------------------------
 
 
 int main (int argc , char* argv[], char* envp[]) {
+    char flag = argv[1][1];
 
-    char *input = itoa(222);
-    int len = system_call(SYS_READ,STDIN, input, INT_MAX);
-    int res = 0;
-    int i;
-    //---------------------------------
-    char* c = itoa(222);
-    system_call(SYS_READ,STDIN, c, 1);
-    while (c != 0) {
-            if((int) c != ' ') {
-                res++;
-                ClearSpaces1(c);
+    switch (flag) {
+        case 'D': {
+            char* c = itoa(222);
+            int res = 0;
+            int len = system_call(SYS_READ,STDIN, c, 1);
+            system_call(SYS_WRITE, 0, SYS_READ, 1);
+            while (len != 0) {
+                if(*c != ' ' && *c != '\n') {
+                    res++;
+                    ClearSpaces1(c, len);
+                }
+                else if( *c == '\n') {
+                    system_call(SYS_WRITE,STDOUT, itoa(res), 1);
+                    system_call(SYS_WRITE,STDOUT, "\n", 2);
+                    res = 0;
+                    len = system_call(SYS_READ,STDIN, c, 1);
+                }
             }
-        system_call(SYS_WRITE,STDOUT, itoa(res), 1);
-        system_call(SYS_WRITE,STDOUT, "\n", 2);
-        res = 0;
-        system_call(SYS_READ,STDIN, c, 1);
+
+            return 0;
+        }
+
     }
 
-
-    //------------------------------------
+    char* c = itoa(222);
+    int res = 0;
+    int len = system_call(SYS_READ,STDIN, c, 1);
     while (len != 0) {
-        for (i = 0 ; i < len;) {
-            if(input[i] != ' ') {
+            if(*c != ' ' && *c != '\n') {
                 res++;
-                i = ClearSpaces(input,i, len);
-
+                ClearSpaces1(c, len);
             }
-            else {
-                i = i + 1;
+            else if( *c == '\n') {
+                system_call(SYS_WRITE,STDOUT, itoa(res), 1);
+                system_call(SYS_WRITE,STDOUT, "\n", 2);
+                res = 0;
+                len = system_call(SYS_READ,STDIN, c, 1);
             }
-        }
-        system_call(SYS_WRITE,STDOUT, itoa(res), 1);
-        system_call(SYS_WRITE,STDOUT, "\n", 2);
-        i = 0;
-        res = 0;
-        len = system_call(SYS_READ,STDIN, input, INT_MAX);
     }
 
     return 0;

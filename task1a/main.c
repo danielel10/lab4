@@ -60,28 +60,40 @@ int main (int argc , char* argv[], char* envp[]) {
     int file_to = STDOUT;
     int file_from = STDIN;
     int flag;
-    char str[50];
+    char inputfile[50];
+    char outputfile[50];
+    int iflag = 0;
+    int oflag = 0;
     for (k = 1; k <argc; k++) {
-        reset_string(str,50);
-        strcat(str,argv[k] + 2);
         if(argv[k][1] == 'D') {
             flag = 'D';
         }
         else if(argv[k][1] == 'i') {
-            file_from = system_call(SYS_OPEN,str, 000, 0644);
+            strcat(inputfile,argv[k] + 2);
+            iflag = 1;
+            file_from = system_call(SYS_OPEN,inputfile, 000, 0644);
             if(file_from < 0)
                 system_call(1);
-            print_to_err(SYS_OPEN,file_from, flag);
 
         }
         else if(argv[k][1] == 'o'){
-            file_to = system_call(SYS_OPEN,str, 101, 0644);
+            strcat(outputfile,argv[k] + 2);
+            oflag = 1;
+            file_to = system_call(SYS_OPEN,outputfile, 101, 0644);
             if(file_to < 0)
                 system_call(1);
+        }
+    }
+    if (flag == 'D') {
+        if (iflag == 1) {
+            system_call(SYS_WRITE, STDERR, strcat(inputfile,"\n"), strlen(inputfile) + 1);
+            print_to_err(SYS_OPEN,file_from, flag);
+        }
+        if (oflag == 1){
+            system_call(SYS_WRITE, STDERR, strcat(outputfile,"\n"), strlen(outputfile) + 1);
             print_to_err(SYS_OPEN,file_to,flag);
         }
     }
-
         char* c = itoa(222);
         int res = 0;
         int response;

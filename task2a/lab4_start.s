@@ -1,6 +1,10 @@
+section	.rodata			; we define (global) read-only variables in .rodata section
+	infection_string: db "Hello, Infected File", 10, 0
+
 section .text
 global _start
 global system_call
+global infection
 extern main
 _start:
     pop    dword ecx    ; ecx = argc
@@ -27,7 +31,8 @@ system_call:
     sub     esp, 4          ; Leave space for local var on stack
     pushad                  ; Save some more caller state
 
-    mov     eax, [ebp+8]    ; Copy function args to registers: leftmost...        
+    mov     eax, [ebp+8]    ; Copy function args to registers: leftmost...
+L2:
     mov     ebx, [ebp+12]   ; Next argument...
     mov     ecx, [ebp+16]   ; Next argument...
     mov     edx, [ebp+20]   ; Next argument...
@@ -38,3 +43,25 @@ system_call:
     add     esp, 4          ; Restore caller state
     pop     ebp             ; Restore caller state
     ret                     ; Back to caller
+
+
+code_start:
+
+infection:
+    push    ebp             ; Save caller state
+    mov     ebp, esp
+    mov     eax, [ebp+8]    ; Copy function args to registers: leftmost...
+    and     eax, 1
+    cmp     eax, 1
+test:
+    je      L1
+    push    dword 22
+    push    infection_string
+    push    dword 1
+    push    dword 4
+    call    system_call
+L1:
+    add     esp, 16
+    mov esp, ebp
+    pop ebp
+    ret

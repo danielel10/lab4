@@ -1,5 +1,6 @@
 #include "util.h"
 #include <limits.h>
+#include <dirent.h>
 extern int system_call();
 
 
@@ -11,6 +12,7 @@ extern int system_call();
 #define STDOUT 1
 #define STDIN 0
 #define STDERR 2
+#define SYS_GETDENTS 141
 
 typedef struct linux_dirent {
     unsigned long  d_ino;     /* Inode number */
@@ -39,20 +41,41 @@ int print_to_err(int call_id, int response, int flag) {
 int main (int argc , char* argv[], char* envp[]) {
     char buf[8192];
     int fd;
-    linux_dirent *d;
+    struct linux_dirent *d;
     int count;
+    int i;
+    int flag;
+    int write;
+    char prefix[0];
+    for (i = 1; i < argc ; i++) {
+        if(argv[i][1] == 'D')
+            flag = 'D';
+        else if(argv[i][1] == 'p') {
+            prefix[strlen(argv[i] + 2)];
+            flag = 'p';
+            strcat(prefix,argv[i] + 2);
+        }
 
+    }
     fd = system_call(SYS_OPEN,".",0,0644);
+    print_to_err(SYS_OPEN,fd,flag);
     if(fd < 0)
         system_call(1);
     int bpos;
 
     for ( ; ; ) {
-        count = system_call(141,fd,buf,8192);
+        count = system_call(SYS_GETDENTS,fd,buf,8192);
+        print_to_err(SYS_GETDENTS,count,flag);
         for (bpos = 0; bpos < count;) {
             d = (struct linux_dirent *) (buf + bpos);
-            system_call(SYS_WRITE,STDOUT, strcat(d->d_name, "\n"), strlen(d->d_name) + 1);
+            if(flag == 'p') {
+                if(strncmp(prefix,d->d_name,))
+            }
+            write = system_call(SYS_WRITE,STDOUT, strcat(d->d_name, "\n"), strlen(d->d_name) + 1);
+            print_to_err(SYS_WRITE,write,flag);
             bpos += d->d_reclen;
+
+
         }
         return 0;
     }

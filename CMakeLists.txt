@@ -16,4 +16,7 @@ add_executable(lab4
         task0b/util.h
         task1a/main.c
         task1a/util.c
-        task1a/util.h)
+        task1a/util.h
+        task2a/main.c
+        task2a/util.c
+        task2a/util.h)
